@@ -16,20 +16,21 @@ const PREPOP_DATA = [
 ];
 
 class MockDB {
-  #data = PREPOP_DATA;
+  #data = [...PREPOP_DATA]; // Spread to prevent mutation of original prepopulated data
   #nextId = 5;
 
   /**
    * Asynchronously resets the dataset to the default values.
    */
   async reset() {
-    this.#data = PREPOP_DATA;
+    this.#data = [...PREPOP_DATA]; // Reset the data by spreading the default values
+    this.#nextId = 5; // Reset the ID counter
   }
 
   /**
-   * Checks to see if all of the keys on the given object match the keys expected in MockData.
+   * Checks if the provided object contains valid keys matching MockData properties.
    * @param {MockData} obj
-   * @returns {boolean} a boolean value indicating whether all of the input object's keys are valid keys.
+   * @returns {boolean}
    */
   isValidData(obj) {
     return Object.keys(obj).every((key) =>
@@ -38,13 +39,13 @@ class MockDB {
   }
 
   /**
-   * Asynchronously adds a mock user object to the dataset.
+   * Adds a new user to the dataset.
    * @param {MockData} newUserDTO
-   * @returns {{ insertedUser: MockData, success: boolean }} an object with two values: insertedRow and success
+   * @returns {{ insertedUser: MockData, success: boolean }}
    */
   async add(newUserDTO) {
     if (this.isValidData(newUserDTO)) {
-      let newUser = new MockData(
+      const newUser = new MockData(
         this.#nextId++,
         newUserDTO.firstName,
         newUserDTO.lastName,
@@ -54,7 +55,7 @@ class MockDB {
       this.#data.push(newUser);
 
       return {
-        insertedRow: newUser,
+        insertedUser: newUser,
         success: true,
       };
     } else {
@@ -63,26 +64,26 @@ class MockDB {
   }
 
   /**
-   * Asynchronously finds and updates a mock user object by id.
+   * Updates an existing user by ID.
    * @param {number} id
    * @param {MockData} updatedUserDTO
-   * @returns {{ updatedUser: MockData, success: boolean }} an object with two values: updatedRow and success
+   * @returns {{ updatedRow: MockData, success: boolean }}
    */
   async update(id, updatedUserDTO) {
     if (this.isValidData(updatedUserDTO)) {
-      let updatedUser;
+      let updatedUser = null;
 
-      this.#data = this.#data.map((value) => {
-        if (value.id == id) {
-          updatedUser = {
-            ...value,
-            ...updatedUserDTO,
-          };
+      this.#data = this.#data.map((user) => {
+        if (user.id == id) {
+          updatedUser = { ...user, ...updatedUserDTO };
           return updatedUser;
         }
-
-        return value;
+        return user;
       });
+
+      if (!updatedUser) {
+        throw new Error(`User with ID ${id} not found`);
+      }
 
       return {
         updatedRow: updatedUser,
@@ -94,29 +95,36 @@ class MockDB {
   }
 
   /**
-   * Asynchronously finds and returns a mock user object by id.
-   * @param id number
-   * @returns user object
+   * Retrieves a single user by ID.
+   * @param {number} id
+   * @returns {MockData | null}
    */
   async getOne(id) {
-    return this.#data.find((value) => value.id == id) || null;
+    const user = this.#data.find((u) => u.id == id);
+    return user || null;
   }
 
   /**
-   * Asynchronously returns a mock data list of user objects.
-   * @returns array of users
+   * Retrieves all users in the dataset.
+   * @returns {MockData[]}
    */
   async getAll() {
     return this.#data;
   }
 
   /**
-   * Asynchronously finds and removes a mock user object by id.
+   * Deletes a user by ID.
    * @param {number} id
-   * @returns {{ removedRowId: number, success: boolean }} an object with two values: removedRowId and success
+   * @returns {{ removedRowId: number, success: boolean }}
    */
   async remove(id) {
-    this.#data = this.#data.filter((value) => value.id != id);
+    const initialLength = this.#data.length;
+
+    this.#data = this.#data.filter((user) => user.id != id);
+
+    if (this.#data.length === initialLength) {
+      throw new Error(`User with ID ${id} not found`);
+    }
 
     return {
       removedRowId: id,
@@ -125,6 +133,6 @@ class MockDB {
   }
 }
 
-let db = new MockDB();
+const db = new MockDB();
 
 export default db;

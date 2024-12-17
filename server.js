@@ -1,18 +1,21 @@
 import express from "express";
 import config from "./config";
-// TODO: import router from routes/
+import router from "./routes/index.js"; // Import the router from routes/index.js
 
 const app = express();
 
 app.use(express.json());
 
-// TODO: use the imported router to handle all requests
+// Use the imported router to handle all requests under "/api"
+app.use("/api", router);
 
+// Error-handling middleware
 app.use((err, req, res, next) => {
   console.error(err);
-  res.json({ name: err.name, msg: err.message });
+  res.status(500).json({ name: err.name, msg: err.message });
 });
 
+// Start the server
 app.listen(config.port, () => {
   console.log(`Server listening on port ${config.port}...`);
 });
